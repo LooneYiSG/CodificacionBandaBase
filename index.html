@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TFL-Comunicaciones</title>
+    <link rel="stylesheet" href="./style.css">
+    <script src="./javascript.js"></script>
+    <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
+</head>
+<body>
+    <div class="nav">
+        <h2>Trabajo Final de Laboratorio</h2>
+    </div>
+    <div class="container">
+        <div class="message">
+           <div class="params">
+                <label for="message">Message(Until 4 chars):</label>
+                <input id="message" type="text" onkeyup="getInputText()" maxlength="4" placeholder="hola">
+                OR
+                <label for="binarin">Binary input:</label>
+                <input id="binarin" type="number" onkeyup="loadBinaryInput()" placeholder="Only 0s and 1s">
+
+                <div class="texts">
+                    <b>ASCII:&nbsp;</b> 
+                    <div id="ASCIIText"></div>
+                </div>
+                <div class="texts">
+                    <b>Binary + Parity:&nbsp;</b>
+                    <div id="BinaryText"></div>
+                </div>
+
+                <div class="codparams">
+                    <label for="codtypes">Elegir codificacion:</label>
+                    <select name="codtypes" id="codtypes">
+                    <option value="nrzi">NRZ-I</option>
+                    <option value="rz">RZ</option>
+                    <option value="mchr">Manchester</option>
+                    <option value="mchd">Manchester Diferencial</option>
+                    <option value="ami">AMI</option>
+                    <option value="b8zs">B8ZS</option>
+                    <option value="hdb3">HDB3</option>
+                    </select>
+                    <label for="level">Nivel:</label>
+                    <input type="number" id="level" step="1" min="1" value="1">
+                    <button id="codsignal" type="button">Codificar</button>
+                </div>
+                
+           </div>
+        </div>
+    </div>
+    <div class="sigContainer"><div id="codnrz" onmouseover="mostrarTooltip('nrz')" onmousemove="moverTooltip(event)" onmouseout="ocultarTooltip()"></div></div>
+    <div class="sigContainer"><div id="codificadas" onmouseover="mostrarTooltip(event)" onmousemove="moverTooltip(event)" onmouseout="ocultarTooltip()"></div></div>
+    <div id="tooltip" class="tooltip"></div>
+    <div class="copyright"><h3>© Samuel Ignacio Verazay - 52606</h3></div>
+    <script type="py" config='{"packages":["numpy","matplotlib"]}'>
+        import js
+        import numpy as np
+        import matplotlib.pyplot as plt
+        from pyodide.ffi.wrappers import add_event_listener
+        from pyscript import display
+        from js import window
+
+        # Función para convertir una cadena binaria en una lista de bits
+        def cadena_a_bits(cadena_binaria):
+            return np.array([int(bit) for bit in cadena_binaria])
+
+        # Función para la codificación NRZ (Unipolar o Polar)
+        def codificar_nrz(senal_digital, level, polar):
+            if polar:
+                return np.where(senal_digital == 1, level, 0)
+            else:
+                return senal_digital
+
+        # Función para la codificación NRZ-I (Polar)
+        def codificar_nrz_i(senal_digital, level):
+            señal_codificada = np.zeros_like(senal_digital)
+            nivel_actual = level  # Comienza con un nivel positivo
+            for i, bit in enumerate(senal_digital):
+                if bit == 1:
+                    nivel_actual *= -1  # Invierte el nivel
+                señal_codificada[i] = nivel_actual
+            return señal_codificada
+
+        # Función para la codificación RZ (Polar)
+        def codificar_rz(senal_digital, level):
+            señal_codificada = np.zeros(len(senal_digital) * 2)  # Duplicar tamaño de array para retorno a cero
+            for i, bit in enumerate(senal_digital):
+                señal_codificada[2 * i] = level if bit == 1 else -level  # Primer mitad del bit
+                señal_codificada[2 * i + 1] = 0  # Retorno a cero en la segunda mitad
+            return señal_codificada
+
+        # Función para la codificación Manchester
+        def codificar_manchester(senal_digital, level):
+            señal_codificada = np.zeros(len(senal_digital) * 2)  # Duplicar tamaño de array
+            for i, bit in enumerate(senal_digital):
+                if bit == 1:
+                    señal_codificada[2 * i] = -level  # Transición de bajo a alto
+                    señal_codificada[2 * i + 1] = level
+                else:
+                    señal_codificada[2 * i] = level  # Transición de alto a bajo
+                    señal_codificada[2 * i + 1] = -level
+            return señal_codificada
+
+        # Función para la codificación Manchester Diferencial
+        def codificar_manchester_diferencial(senal_digital, level):
+            señal_codificada = np.zeros(len(senal_digital) * 2)
+            nivel_actual = level
+            for i, bit in enumerate(senal_digital):
+                if bit == 1:
+                    señal_codificada[2 * i] = nivel_actual
+                    señal_codificada[2 * i + 1] = -nivel_actual
+                else:
+                    señal_codificada[2 * i] = -nivel_actual
+                    señal_codificada[2 * i + 1] = nivel_actual
+                nivel_actual = señal_codificada[2 * i + 1]
+            return señal_codificada
+
+        # Función para la codificación AMI
+        def codificar_ami(senal_digital, level):
+            señal_codificada = np.zeros_like(senal_digital)
+            nivel_actual = level
+            for i, bit in enumerate(senal_digital):
+                if bit == 1:
+                    señal_codificada[i] = nivel_actual
+                    nivel_actual *= -1  # Alterna entre positivo y negativo
+            return señal_codificada
+
+        # Codificación B8ZS (Bipolar with 8-Zero Substitution)
+        def codificar_b8zs(senal_digital, level):
+            ami_codificada = codificar_ami(senal_digital, level)  # Codificación base AMI
+            b8zs_codificada = np.copy(ami_codificada)  # Copia de la señal AMI para modificaciones
+            
+            cero_seq = np.zeros(8)  # Secuencia de 8 ceros para buscar
+            polaridad_anterior = 1  # Guardamos la polaridad antes del bloque de 8 ceros
+        
+            for i in range(len(senal_digital) - 7):
+                if np.array_equal(senal_digital[i:i+8], cero_seq):
+                    # Determinar la última polaridad no cero previa al bloque de 8 ceros
+                    j = i - 1
+                    while j >= 0 and b8zs_codificada[j] == 0:
+                        j -= 1
+                    polaridad_anterior = b8zs_codificada[j] if j >= 0 else 1
+                    
+                    # Si el último pulso no cero fue positivo
+                    if polaridad_anterior == level:
+                        # Sustitución de 000+-0-+
+                        b8zs_codificada[i:i+8] = [0, 0, 0, level, -level, 0, -level, level]
+                    else:
+                        # Si el último pulso no cero fue negativo
+                        # Sustitución de 000-+0+-
+                        b8zs_codificada[i:i+8] = [0, 0, 0, -level, level, 0, level, -level]
+                    # Actualizar polaridad según el último valor de la secuencia
+                    polaridad_anterior = b8zs_codificada[i+7]
+            
+            return b8zs_codificada
+
+        # Codificación HDB3 (High-Density Bipolar 3-Zero Substitution)
+        def codificar_hdb3(senal_digital, level):
+            ami_codificada = codificar_ami(senal_digital, level)  # Codificación base AMI
+            hdb3_codificada = np.copy(ami_codificada)      # Copia de la señal AMI para modificaciones
+            
+            cero_seq = np.zeros(4)  # Secuencia de 4 ceros para buscar
+            contador_pulsos = 0     # Contador de pulsos distintos de cero (para mantener la paridad)
+            polaridad_anterior = level # Guardamos la polaridad antes del bloque de 4 ceros
+            
+            i = 0  # Índice para recorrer la señal
+            while i < len(senal_digital):
+                if i <= len(senal_digital) - 4 and np.array_equal(senal_digital[i:i+4], cero_seq):
+                    # Sustitución de 4 ceros consecutivos
+                    
+                    if contador_pulsos % 2 == 0:
+                        # Paridad: número de pulsos es par -> Sustitución B00V
+                        hdb3_codificada[i:i+4] = [-polaridad_anterior, 0, 0, -polaridad_anterior]  # B00V
+                    else:
+                        # Paridad: número de pulsos es impar -> Sustitución 000V
+                        hdb3_codificada[i:i+4] = [0, 0, 0, polaridad_anterior]  # 000V
+                    
+                    #polaridad_anterior = -polaridad_anterior  # Actualizar polaridad
+                    contador_pulsos = 0  # Reiniciar contador de pulsos
+                    i += 4  # Saltar el bloque de 4 ceros sustituidos
+                else:
+                    # Si no hay 4 ceros, mantener el conteo de pulsos
+                    if senal_digital[i] == 1:
+                        contador_pulsos += 1
+                    # Mantener el valor actual en la señal codificada (1 o -1)
+                    hdb3_codificada[i] = ami_codificada[i]
+                    polaridad_anterior = ami_codificada[i]
+                    i += 1
+            
+            return hdb3_codificada
+
+
+        # Función para graficar las señales
+        def graficar_senalnrz(senal_orig, senal_cod, yrange):
+
+            fig, axs = plt.subplots(1, 1, figsize=(19/2, 15/4))
+            
+            t = np.arange(len(senal_orig) + 1)
+
+            # Graficar la señal digital NRZ (Unipolar o Polar)
+            axs.step(t,  np.append(senal_cod, senal_cod[-1]), label="Señal Digital", color='red', where='post', linewidth=2.5)
+            axs.set_title("Señal Digital NRZ")
+
+            axs.set_xticks(np.arange(len(senal_orig)))
+            axs.set_yticks(yrange)
+            axs.set_xticklabels([''] * len(senal_orig))  # Dejar los ticks sin etiquetas
+            axs.set_ylabel("Nivel")
+            axs.set_xlabel("Bits", labelpad=15)
+            axs.grid(True)
+            axs.legend()
+
+            # Ajustar la posición vertical de las etiquetas de los bits
+            offset_y = yrange[0] - 0.1  # Ajusta este valor según sea necesario
+
+            # Añadir textos en el medio de los ticks para indicar los bits
+            for i, bit in enumerate(senal_orig):
+                axs.text(i + 0.5, offset_y, str(bit), ha='center', va='top', fontsize=10, color='black')
+
+            # Extender los límites de la gráfica un poco para que no se corte al principio o al final
+            axs.set_xlim(-0.5, len(senal_orig) + 0.5)
+
+            # Ajustar el diseño y mostrar el gráfico
+            plt.tight_layout()
+            
+            display(fig, target="codnrz")
+
+            plt.close(fig)
+
+
+        # Función para graficar las señales
+        def graficar_senales(senal_orig, senal_cod, timeslap, type, yrange):
+
+            fig, axs = plt.subplots(1, 1, figsize=(19/2, 15/4))
+            
+            if timeslap == 1:
+                t = np.arange(len(senal_orig) + 1)
+                senal_cod_extendida = np.append(senal_cod, senal_cod[-1])
+                whr = 'post'
+            else:
+                t = np.linspace(0, len(senal_orig), len(senal_cod) + 1)
+                senal_cod_extendida = np.append(senal_cod, senal_cod[-1])
+                whr = 'post'
+
+            # Graficar la señal digital NRZ (Unipolar o Polar)
+            axs.step(t, senal_cod_extendida, label="Señal Digital", color='blue', where=whr, linewidth=2.5)
+            axs.set_title("Señal Digital "+type)
+
+            # Ajustar los ticks para alinearlos con los bits de la señal
+            axs.set_xticks(np.arange(len(senal_orig)))
+        
+            axs.set_yticks(yrange)
+            axs.set_xticklabels([''] * len(senal_orig))  # Dejar los ticks sin etiquetas
+            axs.set_ylabel("Nivel")
+            axs.set_xlabel("Bits", labelpad=15)
+            axs.grid(True)
+            axs.legend()
+
+            # Añadir textos en el medio de los ticks para indicar los bits
+            for i, bit in enumerate(senal_orig):
+                axs.text(i + 0.5, yrange[0] - 0.2, str(bit), ha='center', va='top', fontsize=10, color='black')
+
+            # Extender los límites de la gráfica un poco para que no se corte al principio o al final
+            axs.set_xlim(-0.5, len(senal_orig) + 0.5)
+
+            # Ajustar el diseño y mostrar el gráfico
+            plt.tight_layout()
+            
+            display(fig, target = "codificadas")
+
+            plt.close(fig)
+
+        # Definir funcion de generacion de señales
+        def getCod(event):
+            # Parámetros del HTML
+            cadena_binaria = js.document.getElementById("BinaryText").innerText
+            if cadena_binaria == "":
+                return window.clearCod()
+
+            choose = js.document.getElementById("codtypes").value
+            level = int(js.document.getElementById("level").value or 1)
+            yrange = [-level,0,level]
+
+            # Convertir la cadena binaria a bits
+            senal_digital = cadena_a_bits(cadena_binaria)
+
+            # Codificar la señal
+            if choose == "nrz":
+                type = "NRZ"
+                yrange = [0,level]
+                senal_cod = codificar_nrz(senal_digital, level, polar=True)
+            elif choose == "nrzi":
+                type = "NRZ-I"
+                senal_cod = codificar_nrz_i(senal_digital, level)
+            elif choose == "rz":
+                type = "RZ"
+                senal_cod = codificar_rz(senal_digital, level)
+            elif choose == "mchr":
+                type = "Manchester"
+                senal_cod = codificar_manchester(senal_digital, level)
+            elif choose == "mchd":
+                type = "Manchester Diferencial"
+                senal_cod = codificar_manchester_diferencial(senal_digital, level)
+            elif choose == "ami":
+                type = "AMI"
+                senal_cod = codificar_ami(senal_digital, level)
+            elif choose == "b8zs":
+                type = "B8ZS"
+                senal_cod = codificar_b8zs(senal_digital, level)
+            elif choose == "hdb3":
+                type = "HDB3"
+                senal_cod = codificar_hdb3(senal_digital, level)
+            
+            if choose == "rz" or choose == "mchr" or choose == "mchd":
+                timeslap = 2
+            else:
+                timeslap = 1
+
+            window.clearCod()
+            # Graficar las señales codificadas
+            graficar_senalnrz(senal_digital, codificar_nrz(senal_digital, level, False), [0,level])
+            graficar_senales(senal_digital, senal_cod, timeslap, type, yrange)
+
+        # Asociar el evento de clic con la función
+        btn = js.document.getElementById("codsignal")
+        add_event_listener(btn, "click", getCod)
+    </script>
+</body>
+</html>
