@@ -38,26 +38,24 @@ const getInputText = () =>{
 }
 
 const loadBinaryInput = () => {
+    let binaryInput = document.getElementById("binarin").value;
 
-    binaryInput = document.getElementById("binarin").value;
-    const binaryPattern = /^[01]+$/;
-    if (!binaryPattern.test(binaryInput)) {
-        alert("Por favor, ingrese solo valores binarios (0 o 1).");
-        // Remover el último carácter no válido
-        binaryInput = binaryInput.slice(0, -1);
-        // Actualizar el campo de texto con el valor corregido
-        document.getElementById("binarin").value = binaryInput;
-    }
-    if(binaryInput.length>amountOfChars){
+    // Eliminar cualquier carácter que no sea 0 o 1
+    binaryInput = binaryInput.replace(/[^01]/g, '');
+
+    // Verificar la longitud permitida
+    if (binaryInput.length > amountOfChars) {
         alert(`Por favor, ingrese hasta ${amountOfChars} valores binarios.`);
-        // Remover el último carácter no válido
         binaryInput = binaryInput.slice(0, amountOfChars);
-        // Actualizar el campo de texto con el valor corregido
-        document.getElementById("binarin").value = binaryInput;
     }
-    document.getElementById("BinaryText").innerHTML = binaryInput;
 
+    // Actualizar el campo de texto con el valor corregido
+    document.getElementById("binarin").value = binaryInput;
+
+    // Mostrar el valor actualizado
+    document.getElementById("BinaryText").innerHTML = binaryInput;
 }
+
 
 function clearCod(){
     document.getElementById("codificadas").innerHTML = '';
