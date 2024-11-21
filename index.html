@@ -5,24 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TFL-Comunicaciones</title>
     <link rel="stylesheet" href="./style.css">
-    <script src="./javascript.js"></script>
     <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
 </head>
 <body>
     <div class="nav">
+        <h3>Comunicaciones - 3K1</h3>
         <h2>Trabajo Final de Laboratorio</h2>
+        <h3>ⵥ U.T.N - F.R.T | 2024</h3>
     </div>
     <div class="container">
         <div class="message">
            <div class="params">
-                <label for="message">Message(Until 4 chars):</label>
-                <input id="message" type="text" onkeyup="getInputText()" maxlength="4" placeholder="hola">
+                <label for="message">Message(Up to 4 characters):</label>
+                <input id="message" type="text" onkeyup="getInputText()" maxlength="4" placeholder="DoIt">
                 OR
                 <label for="binarin">Binary input:</label>
                 <input id="binarin" type="number" onkeyup="loadBinaryInput()" placeholder="Only 0s and 1s">
 
                 <div class="texts">
-                    <b>ASCII:&nbsp;</b> 
+                    <b>ASCII (256):&nbsp;</b> 
                     <div id="ASCIIText"></div>
                 </div>
                 <div class="texts">
@@ -53,6 +54,7 @@
     <div class="sigContainer"><div id="codificadas" onmouseover="mostrarTooltip(event)" onmousemove="moverTooltip(event)" onmouseout="ocultarTooltip()"></div></div>
     <div id="tooltip" class="tooltip"></div>
     <div class="copyright"><h3>© Samuel Ignacio Verazay - 52606</h3></div>
+    <div class="UTN">ⵥ</div>
     <script type="py" config='{"packages":["numpy","matplotlib"]}'>
         import js
         import numpy as np
@@ -325,5 +327,6 @@
         btn = js.document.getElementById("codsignal")
         add_event_listener(btn, "click", getCod)
     </script>
+    <script src="./javascript.js"></script>
 </body>
 </html>
