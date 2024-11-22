@@ -56,12 +56,17 @@ const loadBinaryInput = () => {
     document.getElementById("BinaryText").innerHTML = binaryInput;
 }
 
+const loadLevelInput = () => {
+    if(Number(document.getElementById("level").value) < 1){
+        alert("Por favor ingrese un nivel de voltaje mayor a 0");
+        document.getElementById("level").value = 1;
+    }
+}
 
 function clearCod(){
     document.getElementById("codificadas").innerHTML = '';
     document.getElementById("codnrz").innerHTML = '';
     document.getElementById("BinaryText").getHTML() !== "" ? 0 : alert("Por favor ingrese un mensaje a codificar");
-    document.getElementById("level").value < 1 ?  alert("Por favor ingrese un nivel de voltaje mayor a 0") : 0;
     codSelected = document.getElementById("codtypes").value;
 }
 

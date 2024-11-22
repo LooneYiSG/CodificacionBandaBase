@@ -43,7 +43,7 @@
                     <option value="hdb3">HDB3</option>
                     </select>
                     <label for="level">Nivel:</label>
-                    <input type="number" id="level" step="1" min="1" value="1">
+                    <input type="number" id="level" step="1" min="1" value="1" onkeyup="loadLevelInput()">
                     <button id="codsignal" type="button">Codificar</button>
                 </div>
                 
@@ -280,7 +280,7 @@
                 return window.clearCod()
 
             choose = js.document.getElementById("codtypes").value
-            level = int(js.document.getElementById("level").value or 1)
+            level = int(float(js.document.getElementById("level").value or 1))
             yrange = [-level,0,level]
 
             # Convertir la cadena binaria a bits
@@ -320,7 +320,7 @@
 
             window.clearCod()
             # Graficar las señales codificadas
-            graficar_senalnrz(senal_digital, codificar_nrz(senal_digital, level, False), [0,level])
+            graficar_senalnrz(senal_digital, codificar_nrz(senal_digital, level, True), [0,level])
             graficar_senales(senal_digital, senal_cod, timeslap, type, yrange)
 
         # Asociar el evento de clic con la función
