@@ -9,7 +9,7 @@
 </head>
 <body>
     <div class="nav">
-        <h3>Comunicaciones - 3K1</h3>
+        <h3>Comunicaciones - 3K01</h3>
         <h2>Trabajo Final de Laboratorio</h2>
         <h3>ⵥ U.T.N - F.R.T | 2024</h3>
     </div>
@@ -213,7 +213,7 @@
             axs.legend()
 
             # Ajustar la posición vertical de las etiquetas de los bits
-            offset_y = yrange[0] - 0.1  # Ajusta este valor según sea necesario
+            offset_y = -yrange[1] * 0.1  # Ajusta este valor según sea necesario
 
             # Añadir textos en el medio de los ticks para indicar los bits
             for i, bit in enumerate(senal_orig):
@@ -258,9 +258,12 @@
             axs.grid(True)
             axs.legend()
 
+            # Ajustar la posición vertical de las etiquetas de los bits
+            offset_y = yrange[0] * 1.2  # Ajusta este valor según sea necesario
+
             # Añadir textos en el medio de los ticks para indicar los bits
             for i, bit in enumerate(senal_orig):
-                axs.text(i + 0.5, yrange[0] - 0.2, str(bit), ha='center', va='top', fontsize=10, color='black')
+                axs.text(i + 0.5, offset_y, str(bit), ha='center', va='top', fontsize=10, color='black')
 
             # Extender los límites de la gráfica un poco para que no se corte al principio o al final
             axs.set_xlim(-0.5, len(senal_orig) + 0.5)
